@@ -3,41 +3,48 @@
 create schema DATABASE_GROUP_PROJECT;
 
 CREATE TABLE MOVIE_ACTORS(
-movieID INT,
-actorID varchar(70),
+movieID INT Not Null,
+actorID varchar(70) Not Null,
 actorName VarChar(80),
-ranks int);
+ranks int,
+Primary Key(movieID, actorID)
+);
 
 CREATE TABLE MOVIE_COUNTRIES(
-movieID INT,
-country varchar(30));
+movieID INT Not Null,
+country varchar(30) Not Null,
+primary key(movieID, country)
+);
 
 CREATE TABLE MOVIE_DIRECTORS(
-movieID INT,
-directorID varchar(40),
-directorName varchar(40));
+movieID INT Not Null,
+directorID varchar(40) Not NUll,
+directorName varchar(40),
+primary key (movieID, directorID)
+);
 
 CREATE TABLE MOVIE_GENRES(
 movieID INT,
-genre varchar(20));
-
-
-
+genre varchar(20)
+);
 
 create table MOVIE_LOCATIONS(
-movieID int,
+movieID int Not NUll,
 location1 varchar(100),
 location2 varchar(100),
 location3 varchar(100),
-location4 varchar(200));
+location4 varchar(200),
+primary key(movieId)
+);
 
 create table MOVIE_TAGS(
 movieID int,
 tagID int,
-tagWeight int);
+tagWeight int
+);
 
 create table MOVIE(
-movieID int,  #1
+movieID int Not Null,  #1
 title varchar(150),
 imdbID int,
 spanishTitle varchar(150),
@@ -57,11 +64,14 @@ rtTopCriticsScore varchar(4),
 rtAudienceRating varchar(4), #18
 rtAudienceNumRatings varchar(10),
 rtAudienceScore varchar(4), #20
-rtPictureURL varchar(100));
+rtPictureURL varchar(100),
+primary key(movieID)
+);
 
 create table TAGS(
 tagID int,
-tagValue varchar(100));
+tagValue varchar(100)
+);
 
 
 CREATE table USER_RATED_MOVIES(
@@ -73,13 +83,15 @@ date_month int,
 date_year int,
 date_hour int,
 date_minute int,
-date_second int);
+date_second int
+);
 
 CREATE TABLE USER_RATED_MOVIES_TIMESTAMP(
 userID int,
 movieID int,
 rating float,
-timestamp long);
+timestamp long
+);
 
 CREATE table USER_TAGGED_MOVIES(
 userID int,
@@ -90,13 +102,15 @@ date_month int,
 date_year int,
 date_hour int,
 date_minute int,
-date_second int);
+date_second int
+);
 
 create table USER_TAGGED_MOVIES_TIMESTAMP(
 userID int,
 movieID int,
 tagID int,
-timestamp long);
+timestamp long
+);
 
 
 
