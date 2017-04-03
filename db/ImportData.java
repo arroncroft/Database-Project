@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.*;
 
-public class Main {
+public class ImportData {
 
     public static void main(String[] args) throws Exception {
           // Show the arguements provided
