@@ -44,8 +44,8 @@ CREATE TABLE MOVIE_ACTORS(
 
 CREATE TABLE MOVIE_COUNTRIES(
   movieID INT Not Null,
-  country varchar(30) Not Null,
-  primary key(movieID, country),
+  country varchar(30),
+  primary key(movieID),
   CONSTRAINT fk_movie1 Foreign Key(movieID) REFERENCES MOVIE(movieID)
 );
 
