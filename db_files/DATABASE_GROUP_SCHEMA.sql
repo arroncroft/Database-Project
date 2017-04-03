@@ -24,8 +24,9 @@ primary key (movieID, directorID)
 );
 
 CREATE TABLE MOVIE_GENRES(
-movieID INT,
-genre varchar(20)
+movieID INT Not Null,
+genre varchar(20) Not Null,
+primary key(movieID, genre)
 );
 
 create table MOVIE_LOCATIONS(
@@ -38,9 +39,11 @@ primary key(movieId)
 );
 
 create table MOVIE_TAGS(
-movieID int,
-tagID int,
-tagWeight int
+movieID int Not Null,
+tagID int Not Null,
+tagWeight int,
+primary key(movieID, tagID)
+
 );
 
 create table MOVIE(
@@ -69,47 +72,52 @@ primary key(movieID)
 );
 
 create table TAGS(
-tagID int,
-tagValue varchar(100)
+tagID int Not Null,
+tagValue varchar(100),
+primary key(tagID)
 );
 
 
 CREATE table USER_RATED_MOVIES(
-userID int,
-movieID int,
+userID int Not Null,
+movieID int Not Null,
 rating float,
 date_day int,
 date_month int,
 date_year int,
 date_hour int,
 date_minute int,
-date_second int
+date_second int,
+primary key(userID, movieID)
 );
 
 CREATE TABLE USER_RATED_MOVIES_TIMESTAMP(
-userID int,
-movieID int,
+userID int Not Null,
+movieID int Not Null,
 rating float,
-timestamp long
+timestamp long,
+primary key(userID, movieID)
 );
 
 CREATE table USER_TAGGED_MOVIES(
-userID int,
-movieID int,
-tagID int,
+userID int Not Null,
+movieID int Not Null,
+tagID int Not Null,
 date_day int,
 date_month int,
 date_year int,
 date_hour int,
 date_minute int,
-date_second int
+date_second int,
+primary key(userID, movieID, tagID)
 );
 
 create table USER_TAGGED_MOVIES_TIMESTAMP(
-userID int,
-movieID int,
-tagID int,
-timestamp long
+userID int Not Null,
+movieID int Not Null,
+tagID int Not Null,
+timestamp long,
+primary key(userID, movieID, tagID)
 );
 
 
