@@ -5,3 +5,10 @@ to suppy at a time. Also note********* you need to go to the bottom of the file 
 your db username and password, i have left these blank. takes about 2 hrs on my mbp so,
 find something to do while it runs, or watch it....
 
+EDITED
+******************
+You can run each of the files from the seeds folder in mysql workbench or whatver you want to generate the database, it should be much faster than using the java file to do so as reported by Ben.
+
+**You have to run the MOVIE and TAGS files first because of foreign key constraints. It probably won't work otherwise.**
+After that, any order should be fine.
+******************
