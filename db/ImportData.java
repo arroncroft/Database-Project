@@ -169,11 +169,11 @@ public class ImportData {
 
                         //get rest of locations if any
                         for (int i = 1; i < tokencount; i++) {
-                            stmt.setString(i +1,tokens[i]);
+                            stmt.setString(i+1, tokens[i]);
                         }
                         //use this to fill locations spaces when extra
                         for(int j = tokencount+1; j < 6; j++){
-                            stmt.setString(j,null);
+                            stmt.setString(j, null);
                         }
 
                         stmt.execute();
@@ -200,8 +200,8 @@ public class ImportData {
                         tokens = line.split("\t");
                         //System.out.println("Movie Tags: " + line + "\n"
                          //       + tokens[0] + "\t" + tokens[1] + "\t" + tokens[2]);
-                        sql = "INSERT INTO MOVIE_TAGS(movieID,tagID, tagWeight)" +
-                                "VALUES (?,?, ?);";
+                        sql = "INSERT INTO MOVIE_TAGS(movieID,tagID,tagWeight)" +
+                                "VALUES (?,?,?);";
                         stmt = conn.prepareStatement(sql);
                         stmt.setInt(1, Integer.parseInt(tokens[0]));
                         stmt.setInt(2,Integer.parseInt(tokens[1]));
