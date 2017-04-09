@@ -22,11 +22,12 @@ public class Queries {
 			System.out.println("Database connected successfully");
          System.out.println("*******************************");
          
-         query3(con,"action",10,1);//query test (top 10 action films)
+         query6(con,"medieval",10,1);//query test
 	}
 
+   //search by top rated on RT
 	private static void query1 (Connection conn, int topNum, int pgNum) throws SQLException {
-      String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
+      String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
                      "FROM movie m "+
                      "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
                      "ORDER BY m.rtAudienceRating DESC "+
@@ -51,6 +52,7 @@ public class Queries {
 		}
 	}
    
+   //WIP
    /*private static void query2 (Connection conn, String title, int pgNum) throws SQLException {
       String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
                      "FROM movie m "+
@@ -77,8 +79,9 @@ public class Queries {
 		}
 	}*/
    
+   //search by genre
    private static void query3 (Connection conn, String genre, int topNum, int pgNum) throws SQLException {
-      String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
+      String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
                      "FROM movie m, movie_genres mg "+
                      "WHERE m.movieID = mg.movieID and mg.genre = '"+genre.toUpperCase()+"' AND m.rtAudienceRating NOT LIKE '%N%' "+
                      "ORDER BY m.rtAudienceRating DESC "+
@@ -103,4 +106,113 @@ public class Queries {
 		}
 	}
 
+   //search by director
+   private static void query4 (Connection conn, String dName, int topNum, int pgNum) throws SQLException {
+      String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
+                     "FROM movie m, movie_directors md "+
+                     "WHERE m.movieID = md.movieID and md.directorName LIKE '%"+dName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
+                     "ORDER BY m.rtAudienceRating DESC "+
+                     "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+      try {
+         //create the prepared statement
+			PreparedStatement ps = conn.prepareStatement(query);
+         //process the results
+			ResultSet rs = ps.executeQuery();
+         while (rs.next()) {
+            System.out.print(rs.getString("title")+" | "+
+                             rs.getInt("movieYear")+" | "+
+                             rs.getString("rtAudienceRating")+" | "+
+                             rs.getString("rtPictureURL")+" | "+
+                             rs.getString("imdbPictureURL")+"\n");
+			}
+         rs.close();
+			ps.close();
+		}
+      catch (SQLException se) {
+			se.printStackTrace();
+		}
+	}
+   
+   //search by actor
+   private static void query5 (Connection conn, String aName, int topNum, int pgNum) throws SQLException {
+      String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
+                     "FROM movie m, movie_actors ma "+
+                     "WHERE m.movieID = ma.movieID and ma.actorName LIKE '%"+aName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
+                     "ORDER BY m.rtAudienceRating DESC "+
+                     "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+      try {
+         //create the prepared statement
+			PreparedStatement ps = conn.prepareStatement(query);
+         //process the results
+			ResultSet rs = ps.executeQuery();
+         while (rs.next()) {
+            System.out.print(rs.getString("title")+" | "+
+                             rs.getInt("movieYear")+" | "+
+                             rs.getString("rtAudienceRating")+" | "+
+                             rs.getString("rtPictureURL")+" | "+
+                             rs.getString("imdbPictureURL")+"\n");
+			}
+         rs.close();
+			ps.close();
+		}
+      catch (SQLException se) {
+			se.printStackTrace();
+		}
+	}
+   
+   //search by tag
+   private static void query6 (Connection conn, String tagName, int topNum, int pgNum) throws SQLException {
+      String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
+                     "FROM movie m, movie_tags mt, tags t "+
+                     "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND t.tagValue LIKE '%"+tagName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
+                     "ORDER BY m.rtAudienceRating DESC "+
+                     "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+      try {
+         //create the prepared statement
+			PreparedStatement ps = conn.prepareStatement(query);
+         //process the results
+			ResultSet rs = ps.executeQuery();
+         while (rs.next()) {
+            System.out.print(rs.getString("title")+" | "+
+                             rs.getInt("movieYear")+" | "+
+                             rs.getString("rtAudienceRating")+" | "+
+                             rs.getString("rtPictureURL")+" | "+
+                             rs.getString("imdbPictureURL")+"\n");
+			}
+         rs.close();
+			ps.close();
+		}
+      catch (SQLException se) {
+			se.printStackTrace();
+		}
+	}
+   
+   //WIP
+   //see top popular directors
+   private static void query7 (Connection conn, int leastMovies, int pgNum) throws SQLException {
+      String query = "SELECT DISTINCT md.directorName "+ 
+                     "FROM movie m, movie_directors md "+
+                     "WHERE "+//WIP Line
+                     "HAVING COUNT (*) > "+leastMovies+" "+
+                     "ORDER BY AVG(m.rtAudienceRating) DESC "+
+                     "LIMIT 10";
+      try {
+         //create the prepared statement
+			PreparedStatement ps = conn.prepareStatement(query);
+         //process the results
+			ResultSet rs = ps.executeQuery();
+         while (rs.next()) {
+            System.out.print(rs.getString("title")+" | "+
+                             rs.getInt("movieYear")+" | "+
+                             rs.getString("rtAudienceRating")+" | "+
+                             rs.getString("rtPictureURL")+" | "+
+                             rs.getString("imdbPictureURL")+"\n");
+			}
+         rs.close();
+			ps.close();
+		}
+      catch (SQLException se) {
+			se.printStackTrace();
+		}
+	}
 }
