@@ -22,7 +22,7 @@ public class Queries {
 			System.out.println("Database connected successfully");
          System.out.println("*******************************");
          
-         query6(con,"medieval",10,1);//query test
+         query10(con,"Toy Story",10,1);//query test
 	}
 
    //search by top rated on RT
@@ -53,7 +53,7 @@ public class Queries {
 	}
    
    //WIP
-   /*private static void query2 (Connection conn, String title, int pgNum) throws SQLException {
+   private static void query2 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
       String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+ 
                      "FROM movie m "+
                      "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
@@ -77,7 +77,7 @@ public class Queries {
       catch (SQLException se) {
 			se.printStackTrace();
 		}
-	}*/
+	}
    
    //search by genre
    private static void query3 (Connection conn, String genre, int topNum, int pgNum) throws SQLException {
@@ -207,6 +207,29 @@ public class Queries {
                              rs.getString("rtAudienceRating")+" | "+
                              rs.getString("rtPictureURL")+" | "+
                              rs.getString("imdbPictureURL")+"\n");
+			}
+         rs.close();
+			ps.close();
+		}
+      catch (SQLException se) {
+			se.printStackTrace();
+		}
+	}
+   
+   //see all tags attached to movie title
+   private static void query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
+      String query = "SELECT DISTINCT t.tagValue "+ 
+                     "FROM movie m, movie_tags mt, tags t "+
+                     "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
+                     "ORDER BY mt.tagWeight DESC "+
+                     "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+      try {
+         //create the prepared statement
+			PreparedStatement ps = conn.prepareStatement(query);
+         //process the results
+			ResultSet rs = ps.executeQuery();
+         while (rs.next()) {
+            System.out.println(rs.getString("tagValue"));
 			}
          rs.close();
 			ps.close();
