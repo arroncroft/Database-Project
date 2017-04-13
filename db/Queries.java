@@ -15,13 +15,13 @@ public class Queries {
 	private static Connection con;
 	private static Statement stmt;
 	private static ResultSet rs;
-   
+
    public static void main(String[] args) throws Exception {
          // opening database connection to MySQL server
 			con = DriverManager.getConnection(url, user, password);
 			System.out.println("Database connected successfully");
          System.out.println("*******************************");
-         
+
          query10(con,"Toy Story",10,1);//query test
 	}
 
