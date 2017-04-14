@@ -8,6 +8,7 @@ import javafx.scene.image.ImageView;
 
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -130,7 +131,8 @@ public class Client extends Application {
                         "Genre",
                         "Director",
                         "Actor",
-                        "Tag"
+                        "Tag",
+                        "Movie(tags)"
                 );
         comboBox = new ComboBox(options);
         comboBox.getSelectionModel().selectFirst();
@@ -207,9 +209,10 @@ public class Client extends Application {
             try {
                 String[][] tempArray = query4(con, searchbox.getText(), 10, 1);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -232,9 +235,10 @@ public class Client extends Application {
             try {
                 String[][] tempArray = query5(con, searchbox.getText(), 10, 1);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -257,9 +261,10 @@ public class Client extends Application {
             try {
                 String[][] tempArray = query3(con, searchbox.getText(), 10, 1);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -282,9 +287,10 @@ public class Client extends Application {
             try {
                 String[][] tempArray = query6(con, searchbox.getText(), 10, 1);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -300,6 +306,23 @@ public class Client extends Application {
             }
             catch(Exception ex){ ex.printStackTrace(); }
         }
+        else if(comboBox.getValue().equals("Movie(tags)")){
+            try{
+                String[] tempArray = query10(con, searchbox.getText(), 10, 1);
+                for(int i = 0; i < tempArray.length; i++){
+                    tempText = new Text(tempArray[i]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 0, i);
+                }
+            }
+            catch(Exception ex) { ex.printStackTrace();}
+        }
+    }
+    //----------------------------------------------------
+    //clickHandle: handles the clicking of titles on searches
+    //----------------------------------------------------
+    private void clickHandle(MouseEvent e, String title){
+        System.out.println(title);
     }
     //----------------------------------------------------
     //query3: searches by genre
@@ -382,13 +405,6 @@ public class Client extends Application {
             ResultSet rs = ps.executeQuery();
             int i = 0;
             while (rs.next()) {
-                /*
-                System.out.print(rs.getString("title")+" | "+
-                        rs.getInt("movieYear")+" | "+
-                        rs.getString("rtAudienceRating")+" | "+
-                        rs.getString("rtPictureURL")+" | "+
-                        rs.getString("imdbPictureURL")+"\n");
-                */
 
                 temp[i][0] = rs.getString("title");
                 temp[i][1] = "" + rs.getInt("movieYear");
@@ -422,13 +438,6 @@ public class Client extends Application {
             ResultSet rs = ps.executeQuery();
             int i = 0;
             while (rs.next()) {
-                /*
-                System.out.print(rs.getString("title")+" | "+
-                        rs.getInt("movieYear")+" | "+
-                        rs.getString("rtAudienceRating")+" | "+
-                        rs.getString("rtPictureURL")+" | "+
-                        rs.getString("imdbPictureURL")+"\n");
-                */
                 temp[i][0] = rs.getString("title");
                 temp[i][1] = "" + rs.getInt("movieYear");
                 temp[i][2] = rs.getString("rtAudienceRating");
@@ -443,5 +452,34 @@ public class Client extends Application {
             se.printStackTrace();
         }
         return temp;
+    }
+    //----------------------------------------------------
+    //query10: Searches by movie, show tags
+    //----------------------------------------------------
+    private String[] query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
+        String[] A = new String[topNum];
+        String query = "SELECT DISTINCT t.tagValue "+
+                "FROM movie m, movie_tags mt, tags t "+
+                "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
+                "ORDER BY mt.tagWeight DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            int i = 0;
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                //System.out.println(rs.getString("tagValue"));
+                A[i] = rs.getString("tagValue");
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return A;
     }
 }
