@@ -1,3 +1,4 @@
+import javax.xml.transform.Result;
 import java.io.*;
 import java.sql.*;
 import java.util.LinkedList;
@@ -22,13 +23,13 @@ public class Queries {
 			System.out.println("Database connected successfully");
          System.out.println("*******************************");
 
-         query8(con, 10, 5, 1);
+         query9(con, 170, 10, 1);
 	}
 
    //search by top rated on RT
 	private static void query1 (Connection conn, int topNum, int pgNum) throws SQLException {
       String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                     "FROM movie m "+
+                     "FROM MOVIE m "+
                      "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
                      "ORDER BY m.rtAudienceRating DESC "+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -52,12 +53,12 @@ public class Queries {
 		}
 	}
 
-   //WIP
    private static void query2 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
-      String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                     "FROM movie m "+
-                     "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
-                     "ORDER BY m.rtAudienceRating DESC "+
+      String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL, t.tagValue "+
+                     "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
+                     "WHERE m.rtAudienceRating NOT LIKE '%N%' and m.movieID = mt.movieID and mt.tagID = t.tagID and m.title like '"+ title +"' "+
+                     "ORDER BY mt.tagWeight DESC "+
+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
       try {
          //create the prepared statement
@@ -69,7 +70,8 @@ public class Queries {
                              rs.getInt("movieYear")+" | "+
                              rs.getString("rtAudienceRating")+" | "+
                              rs.getString("rtPictureURL")+" | "+
-                             rs.getString("imdbPictureURL")+"\n");
+                             rs.getString("imdbPictureURL")+
+                             rs.getString( "tagValue")+"\n");
 			}
          rs.close();
 			ps.close();
@@ -82,7 +84,7 @@ public class Queries {
    //search by genre
    private static void query3 (Connection conn, String genre, int topNum, int pgNum) throws SQLException {
       String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                     "FROM movie m, movie_genres mg "+
+                     "FROM MOVIE m, MOVIE_GENRES mg "+
                      "WHERE m.movieID = mg.movieID and mg.genre = '"+genre.toUpperCase()+"' AND m.rtAudienceRating NOT LIKE '%N%' "+
                      "ORDER BY m.rtAudienceRating DESC "+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -109,7 +111,7 @@ public class Queries {
    //search by director
    private static void query4 (Connection conn, String dName, int topNum, int pgNum) throws SQLException {
       String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                     "FROM movie m, movie_directors md "+
+                     "FROM MOVIE m, MOVIE_DIRECTORS md "+
                      "WHERE m.movieID = md.movieID and md.directorName LIKE '%"+dName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                      "ORDER BY m.rtAudienceRating DESC "+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -136,7 +138,7 @@ public class Queries {
    //search by actor
    private static void query5 (Connection conn, String aName, int topNum, int pgNum) throws SQLException {
       String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                     "FROM movie m, movie_actors ma "+
+                     "FROM MOVIE m, MOVIE_ACTORS ma "+
                      "WHERE m.movieID = ma.movieID and ma.actorName LIKE '%"+aName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                      "ORDER BY m.rtAudienceRating DESC "+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -163,7 +165,7 @@ public class Queries {
    //search by tag
    private static void query6 (Connection conn, String tagName, int topNum, int pgNum) throws SQLException {
       String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                     "FROM movie m, movie_tags mt, tags t "+
+                     "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
                      "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND t.tagValue LIKE '%"+tagName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                      "ORDER BY m.rtAudienceRating DESC "+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -187,26 +189,24 @@ public class Queries {
 		}
 	}
 
-   //WIP
    //see top popular directors
-   private static void query7 (Connection conn, int leastMovies, int pgNum) throws SQLException {
-      String query = "SELECT DISTINCT md.directorName "+
-                     "FROM movie m, movie_directors md "+
-                     "WHERE "+//WIP Line
-                     "HAVING COUNT (*) > "+leastMovies+" "+
-                     "ORDER BY AVG(m.rtAudienceRating) DESC "+
-                     "LIMIT 10";
+   private static void query7 (Connection conn, int k, int topNum, int pgNum) throws SQLException {
+
+       String query = "SELECT md.directorName, AVG(rtAudienceRating)\n" +
+               "FROM MOVIE m, MOVIE_DIRECTORS md\n" +
+               "WHERE m.movieID=md.movieID\n" +
+               "GROUP BY md.directorName\n" +
+               "HAVING count(md.movieID) >" + k + "\n" +
+               "ORDER BY AVG(rtAudienceRating) DESC\n" +
+               "LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum ) + ";";
+
       try {
          //create the prepared statement
 			PreparedStatement ps = conn.prepareStatement(query);
          //process the results
 			ResultSet rs = ps.executeQuery();
          while (rs.next()) {
-            System.out.print(rs.getString("title")+" | "+
-                             rs.getInt("movieYear")+" | "+
-                             rs.getString("rtAudienceRating")+" | "+
-                             rs.getString("rtPictureURL")+" | "+
-                             rs.getString("imdbPictureURL")+"\n");
+            System.out.println(rs.getString("directorName"));
 		}
 	 	rs.close();
 			ps.close();
@@ -248,20 +248,55 @@ public class Queries {
    }
 
    //WIP
-   //TIME LINE ALL MOVIES USER HAS RATED and Breakdown by Genere * (THIS STILL NEEDS TO BE DONE, BUT I HAVE NO CLUE HOW)
-   private static void query9 (Connection conn, String title, int uid, int topNum, int pgNum) throws SQLException
+   //TIME LINE ALL MOVIES USER HAS RATED and Breakdown by Genre
+   private static void query9 (Connection conn, int uid, int topNum, int pgNum) throws SQLException
    {
-	   	String query = 	"SELECT DISTINCT m.title, m.movieYear, m.audienceRating, m.rtPictureURL, m.imdbPictureURL, u.rating " +
-	   					"FROM movie m, user_Rating u " +
-	   					"WHERE u.userID = " + uid + " and m.movieID = u.movieID " +
-	   					//why do we have separate values for month date and year? We can simply use date rather than int.
-	   					"ORDER BY (u.date_day), MONTH(u.date_month), YEAR(u.date_year)";
+       // Gets the movie titles/ratings/dates for the given user id
+	   	String query1 = "SELECT m.title, urmt.rating, DATE_FORMAT(FROM_UNIXTIME(urmt.timestamp/1000), '%e %b %Y') AS 'date_formatted'\n" +
+                        "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt\n" +
+                        "WHERE urmt.userID = " + uid + " AND m.movieID = urmt.movieID\n" +
+                        "ORDER BY urmt.timestamp\n" +
+                        "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+
+        // Gets the the genres and percentages each genre appears in the user ratings for the specified user
+	   	String query2 ="SELECT mg.genre, 100 * count(mg.genre) / (SELECT count(m.title)\n" +
+                                                                 "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt\n" +
+                                                                 "WHERE urmt.userID =" + uid + " AND m.movieID = urmt.movieID\n" +
+                                                                 ") AS 'average'\n" +
+                       "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt, MOVIE_GENRES mg\n" +
+                       "WHERE urmt.userID =" + uid + " AND m.movieID = urmt.movieID AND m.movieID = mg.movieID\n" +
+                       "GROUP BY mg.genre;";
+
+
+       try {
+           //create the prepared statement
+           PreparedStatement ps = conn.prepareStatement(query1);
+           PreparedStatement ps2 = conn.prepareStatement((query2));
+
+           //process the results
+           ResultSet rs = ps.executeQuery();
+           while (rs.next()) {
+               System.out.println(rs.getString("rating") + " | " + rs.getString("date_formatted"));
+           }
+
+           ResultSet rs2 = ps2.executeQuery();
+           while (rs2.next()) {
+               System.out.printf("%s | %s%%\n", rs2.getString("genre"),rs2.getString("average"));
+           }
+           rs.close();
+           ps.close();
+       }
+       catch (SQLException se) {
+           se.printStackTrace();
+       }
+
+
    }
 
    //see all tags attached to movie title
    private static void query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
       String query = "SELECT DISTINCT t.tagValue "+
-                     "FROM movie m, movie_tags mt, tags t "+
+                     "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
                      "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
                      "ORDER BY mt.tagWeight DESC "+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
