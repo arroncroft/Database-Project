@@ -159,6 +159,7 @@ public class Client extends Application {
         Button topMovies = new Button("Top Movies");
         topMovies.setStyle(bStyle);
         topMovies.setPrefWidth(250);
+        topMovies.setOnAction(e -> {topMovieHandle(e);});
 
         Button topDirectors = new Button("Top Directors");
         topDirectors.setStyle(bStyle);
@@ -323,6 +324,72 @@ public class Client extends Application {
     //----------------------------------------------------
     private void clickHandle(MouseEvent e, String title){
         System.out.println(title);
+    }
+    //----------------------------------------------------
+    private void topMovieHandle(ActionEvent e){
+        try {
+            String[][] tempArray = query1(con, Integer.parseInt(amountbox.getText()), 1);//query test
+            for(int i = 0; i < tempArray.length; i++){
+                Text titleText = new Text(tempArray[i][0]);
+                titleText.setFill(Color.WHITE);
+                titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                displayBox.add(titleText, 0, i);
+
+                tempText = new Text(tempArray[i][1]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 1 , i);
+
+                tempText = new Text(tempArray[i][2]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 2 , i);
+
+                displayBox.add(new ImageView(new Image(tempArray[i][3])), 3 , i);
+                displayBox.add(new ImageView(new Image(tempArray[i][4])), 4 , i);
+            }
+        }
+        catch(Exception ex){ ex.printStackTrace(); }
+    }
+    //----------------------------------------------------
+    //query1
+    //----------------------------------------------------
+    private String[][] query1(Connection con, int topNum, int pgNum) throws SQLException {
+        displayBox.getChildren().clear();
+        String[][] temp = new String[topNum][5];
+        String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
+                "FROM movie m "+
+                "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
+                "ORDER BY m.rtAudienceRating DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = con.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = "" + rs.getInt("movieYear");
+                temp[i][2] = rs.getString("rtAudienceRating");
+
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
+                i++;
+            }
+            System.out.println(temp[0][3]);
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
     }
     //----------------------------------------------------
     //query3: searches by genre
