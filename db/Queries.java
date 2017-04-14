@@ -22,7 +22,7 @@ public class Queries {
 			System.out.println("Database connected successfully");
          System.out.println("*******************************");
 
-         query8(con, 3, 5, 1);
+         query8(con, 10, 5, 1);
 	}
 
    //search by top rated on RT
@@ -257,8 +257,6 @@ public class Queries {
 	   					//why do we have separate values for month date and year? We can simply use date rather than int.
 	   					"ORDER BY (u.date_day), MONTH(u.date_month), YEAR(u.date_year)";
    }
-
-
 
    //see all tags attached to movie title
    private static void query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
