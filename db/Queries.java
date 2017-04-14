@@ -22,7 +22,7 @@ public class Queries {
 			System.out.println("Database connected successfully");
          System.out.println("*******************************");
 
-         query10(con,"Toy Story",10,1);//query test
+         query8(con, 3, 5, 1);
 	}
 
    //search by top rated on RT
@@ -207,8 +207,8 @@ public class Queries {
                              rs.getString("rtAudienceRating")+" | "+
                              rs.getString("rtPictureURL")+" | "+
                              rs.getString("imdbPictureURL")+"\n");
-			}
-         rs.close();
+		}
+	 	rs.close();
 			ps.close();
 		}
       catch (SQLException se) {
@@ -217,33 +217,33 @@ public class Queries {
 	}
 
 
-//WIP
-   //SEE TOP ACTORS
+   //See top ACTORS by Rotten Tomato User Score having starred in at least k movies
    private static void query8 (Connection conn, int k, int topNum, int pgNum) throws SQLException
    {
-	   String query = 	"SELECT DISTINCT a.actorName " +
-			   			"FROM movie_actors a, movie m " +
-			   			"GROUP BY a.actorID " +
-			   			"HAVING COUNT (a.movieID) > " + k + " " +
-			   			"ORDER BY DESC ( " +
-			   							"SELECT average (m. rtAudienceRating) " +
-			   							"WHERE M.movieID = A.movieID) " +
-			   			"LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum );
 
-	   try {
-	         //create the prepared statement
-				PreparedStatement ps = conn.prepareStatement(query);
-	         //process the results
-				ResultSet rs = ps.executeQuery();
-	         while (rs.next()) {
-	            System.out.print(rs.getString("actorName"));
-				}
-	         rs.close();
-				ps.close();
+	   String query = "SELECT a.actorName, AVG(rtAudienceRating)\n" +
+                      "FROM MOVIE m, MOVIE_ACTORS a\n" +
+                      "WHERE m.movieID=a.movieID\n" +
+                      "GROUP BY a.actorName\n" +
+                      "HAVING count(a.movieID) >" + k + "\n" +
+                      "ORDER BY AVG(rtAudienceRating) DESC\n" +
+                      "LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum ) + ";";
+
+
+		try {
+			//create the prepared statement
+			PreparedStatement ps = conn.prepareStatement(query);
+			//process the results
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				System.out.println(rs.getString("actorName"));
 			}
-	      catch (SQLException se) {
-				se.printStackTrace();
-			}
+			rs.close();
+			ps.close();
+		}
+		catch (SQLException se) {
+			se.printStackTrace();
+		}
 
    }
 
