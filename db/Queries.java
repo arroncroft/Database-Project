@@ -226,9 +226,9 @@ public class Queries {
 			   			"GROUP BY a.actorID " +
 			   			"HAVING COUNT (a.movieID) > " + k + " " +
 			   			"ORDER BY DESC ( " +
-			   							"SELECT average (m. rtAudienceRating) "
-			   							"WHERE M.movieID = A.movieID) "
-			   			"LIMIT " + topNum + " OFFSET " + ((pgnum -1 ) * topnum );
+			   							"SELECT average (m. rtAudienceRating) " +
+			   							"WHERE M.movieID = A.movieID) " +
+			   			"LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum );
 
 	   try {
 	         //create the prepared statement
@@ -236,7 +236,7 @@ public class Queries {
 	         //process the results
 				ResultSet rs = ps.executeQuery();
 	         while (rs.next()) {
-	            System.out.print(rs.getString("actorName");
+	            System.out.print(rs.getString("actorName"));
 				}
 	         rs.close();
 				ps.close();
@@ -253,9 +253,9 @@ public class Queries {
    {
 	   	String query = 	"SELECT DISTINCT m.title, m.movieYear, m.audienceRating, m.rtPictureURL, m.imdbPictureURL, u.rating " +
 	   					"FROM movie m, user_Rating u " +
-	   					"WHERE u.userID = " + uid + " and m.movieID = u.movieID "\
+	   					"WHERE u.userID = " + uid + " and m.movieID = u.movieID " +
 	   					//why do we have separate values for month date and year? We can simply use date rather than int.
-	   					"ORDER BY (u.date_day), MONTH(u.date_month), YEAR(u.date_year)"
+	   					"ORDER BY (u.date_day), MONTH(u.date_month), YEAR(u.date_year)";
    }
 
 
