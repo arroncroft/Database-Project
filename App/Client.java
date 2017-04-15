@@ -138,7 +138,7 @@ public class Client extends Application {
         //create pagebox nodes
         decreaseButton = new Button("<");
         decreaseButton.setStyle(bStyle);
-        decreaseButton.setOnAction(e -> {pagehandle(e);});
+        decreaseButton.setOnAction(e -> {pageHandle(e);});
 
         pnum = new TextField("1");
         pnum.setEditable(false);
@@ -146,7 +146,7 @@ public class Client extends Application {
 
         increaseButton = new Button(">");
         increaseButton.setStyle(bStyle);
-        increaseButton.setOnAction(e -> {pagehandle(e);});
+        increaseButton.setOnAction(e -> {pageHandle(e);});
 
         //===== Create ComboBox =====
         ObservableList<String> options =
@@ -368,7 +368,7 @@ public class Client extends Application {
     //----------------------------------------------------
     //pageHandle
     //----------------------------------------------------
-    private void pagehandle(ActionEvent e){
+    private void pageHandle(ActionEvent e){
         if(e.getSource() == decreaseButton && !pnum.getText().equals("1")){
             pnum.setText("" + (Integer.parseInt(pnum.getText()) - 1));
         }
@@ -381,8 +381,10 @@ public class Client extends Application {
     //topMovieHandle: called when top movie button hit
     //----------------------------------------------------
     private void topMovieHandle(ActionEvent e){
+        displayBox.getChildren().clear();
+        int pagenumber = Integer.parseInt(pnum.getText());
         try {
-            String[][] tempArray = query1(con, Integer.parseInt(amountbox.getText()), 1);//query test
+            String[][] tempArray = query1(con, Integer.parseInt(amountbox.getText()), pagenumber);//query test
             for(int i = 0; i < tempArray.length; i++){
                 Text titleText = new Text(tempArray[i][0]);
                 titleText.setFill(Color.WHITE);
@@ -408,8 +410,9 @@ public class Client extends Application {
     //----------------------------------------------------
     private void topActorHandle(ActionEvent e){
         displayBox.getChildren().clear();
+        int pagenumber = Integer.parseInt(pnum.getText());
         try{
-            String[] tempArray = query8(con, Integer.parseInt(amountbox.getText()),10, 1);
+            String[] tempArray = query8(con, Integer.parseInt(amountbox.getText()),10, pagenumber);
             for(int i = 0; i < tempArray.length; i++){
                 tempText = new Text(tempArray[i]);
                 tempText.setFill(Color.WHITE);
