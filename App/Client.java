@@ -5,37 +5,45 @@ import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.ScrollPane;
-
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
 import javafx.geometry.*;
 import java.sql.*;
+import java.util.ArrayList;
 import javafx.stage.Screen;
 
 
 
 public class Client extends Application {
 
-    // JavaFX class declarations
+    // Java declarations
     private int maxX;
     private int maxY;
+    private ArrayList<String> clickedList;
+
+    // JavaFX class declarations
     private final String bStyle = "-fx-background-color: #6ba3d3;"; //Style color for Buttons and such: bStyle
     private ScrollPane scrollpane;
     private GridPane displayBox;
     private ComboBox comboBox;
     private TextField searchbox;
     private TextField amountbox;
+    private TextField pnum;
     private Text tempText;
+    private Button increaseButton;
+    private Button decreaseButton;
+    private Button topDirectorsButton;
+    private Button topActorsButton;
+    private Button rbdButton;
+    private Button rbgButton;
 
     //	JDBC URL, username and password of MySQL server
     private static final String url = "jdbc:mysql://localhost:3306/DATABASE_GROUP_PROJECT?useSSL=false";
@@ -59,7 +67,7 @@ public class Client extends Application {
         catch(Exception ex){
             System.out.println("Unable to create connection");
         }
-
+        clickedList = new ArrayList<>();
         getScreenBounds();
         stage.setScene(mainScene());
         stage.setTitle("(VSU)ggester");
@@ -94,6 +102,11 @@ public class Client extends Application {
         root2.setPrefSize(maxX, maxY);
         root2.setStyle("-fx-background-color: #333333;");
 
+        HBox topBox = new HBox();
+        topBox.setPadding(new Insets(10,10,10,10));
+        topBox.setSpacing(maxX/4);
+        topBox.setStyle("-fx-background-color: #444444;");
+
         HBox hbox1 = new HBox();
         hbox1.setAlignment(Pos.CENTER);
         hbox1.setPadding(new Insets(10, 10, 10, 10));
@@ -122,6 +135,22 @@ public class Client extends Application {
         rightPanel.setPadding(new Insets(10, 10, 10, 10));
         rightPanel.setStyle("-fx-background-color: #444444;");
 
+        HBox pagebox = new HBox();
+        pagebox.setAlignment(Pos.CENTER_LEFT);
+
+
+        //create pagebox nodes
+        decreaseButton = new Button("<");
+        decreaseButton.setStyle(bStyle);
+        decreaseButton.setOnAction(e -> {pageHandle(e);});
+
+        pnum = new TextField("1");
+        pnum.setEditable(false);
+        pnum.setPrefWidth(50);
+
+        increaseButton = new Button(">");
+        increaseButton.setStyle(bStyle);
+        increaseButton.setOnAction(e -> {pageHandle(e);});
 
         //===== Create ComboBox =====
         ObservableList<String> options =
@@ -130,7 +159,8 @@ public class Client extends Application {
                         "Genre",
                         "Director",
                         "Actor",
-                        "Tag"
+                        "Tag",
+                        "Movie(tags)"
                 );
         comboBox = new ComboBox(options);
         comboBox.getSelectionModel().selectFirst();
@@ -157,29 +187,40 @@ public class Client extends Application {
         Button topMovies = new Button("Top Movies");
         topMovies.setStyle(bStyle);
         topMovies.setPrefWidth(250);
+        topMovies.setOnAction(e -> {topMovieHandle(e);});
 
-        Button topDirectors = new Button("Top Directors");
-        topDirectors.setStyle(bStyle);
-        topDirectors.setPrefWidth(250);
+        topDirectorsButton = new Button("Top Directors");
+        topDirectorsButton.setStyle(bStyle);
+        topDirectorsButton.setPrefWidth(250);
+        topDirectorsButton.setOnAction(e -> {topPersonHandle(e);});
 
-        Button rmGenre = new Button("Recommend by Genre");
-        rmGenre.setStyle(bStyle);
-        rmGenre.setPrefWidth(250);
+        topActorsButton = new Button("Top Actors");
+        topActorsButton.setStyle(bStyle);
+        topActorsButton.setPrefWidth(250);
+        topActorsButton.setOnAction(e -> {topPersonHandle(e);});
 
-        Button rmDirector = new Button("Recommend by Director");
-        rmDirector.setStyle(bStyle);
-        rmDirector.setPrefWidth(250);
+        rbgButton = new Button("Recommend by Genre");
+        rbgButton.setStyle(bStyle);
+        rbgButton.setPrefWidth(250);
+        rbgButton.setOnAction(e -> {recommendHandle(e);});
+
+        rbdButton = new Button("Recommend by Director");
+        rbdButton.setStyle(bStyle);
+        rbdButton.setPrefWidth(250);
+        rbdButton.setOnAction(e -> {recommendHandle(e);});
 
         amountbox = new TextField("5");
         amountbox.setMaxWidth(100);
 
         //===== Add children to panels =====
-        rightPanel.getChildren().addAll(topMovies, topDirectors, rmGenre, rmDirector, amountbox);
+        rightPanel.getChildren().addAll(topMovies, topDirectorsButton, topActorsButton, rbgButton, rbdButton, amountbox);
         hbox2.getChildren().addAll(scrollpane, rightPanel);
+        pagebox.getChildren().addAll(decreaseButton, pnum, increaseButton);
         hbox1.getChildren().addAll(comboBox, searchbox, searchButton);
+        topBox.getChildren().addAll(pagebox,hbox1);
 
         root2.setLeft(scrollpane);
-        root2.setTop(hbox1);
+        root2.setTop(topBox);
         root2.setRight(rightPanel);
 
 
@@ -191,6 +232,8 @@ public class Client extends Application {
     //----------------------------------------------------
     private void searchHandle(ActionEvent e){
         displayBox.getChildren().clear();
+        clickedList.clear();
+        int pagenumber = Integer.parseInt(pnum.getText());
 
         //--------------------
         //search by movie
@@ -205,11 +248,14 @@ public class Client extends Application {
         //--------------------
         else if(comboBox.getValue().equals("Director")) {
             try {
-                String[][] tempArray = query4(con, searchbox.getText(), 10, 1);//query test
+                String[][] tempArray = query4(con, searchbox.getText(), 10, pagenumber);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    if(titleText.getText().isEmpty())
+                        break;
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -230,11 +276,14 @@ public class Client extends Application {
         //--------------------
         else if(comboBox.getValue().equals("Actor")) {
             try {
-                String[][] tempArray = query5(con, searchbox.getText(), 10, 1);//query test
+                String[][] tempArray = query5(con, searchbox.getText(), 10, pagenumber);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    if(titleText.getText().isEmpty())
+                        break;
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -255,11 +304,14 @@ public class Client extends Application {
         //--------------------
         else if(comboBox.getValue().equals("Genre")) {
             try {
-                String[][] tempArray = query3(con, searchbox.getText(), 10, 1);//query test
+                String[][] tempArray = query3(con, searchbox.getText(), 10, pagenumber);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    if(titleText.getText().isEmpty())
+                        break;
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -280,11 +332,14 @@ public class Client extends Application {
         //--------------------
         else if(comboBox.getValue().equals("Tag")) {
             try {
-                String[][] tempArray = query6(con, searchbox.getText(), 10, 1);//query test
+                String[][] tempArray = query6(con, searchbox.getText(), 10, pagenumber);//query test
                 for(int i = 0; i < tempArray.length; i++){
-                    tempText = new Text(tempArray[i][0]);
-                    tempText.setFill(Color.WHITE);
-                    displayBox.add(tempText, 0, i);
+                    Text titleText = new Text(tempArray[i][0]);
+                    if(titleText.getText().isEmpty())
+                        break;
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
 
                     tempText = new Text(tempArray[i][1]);
                     tempText.setFill(Color.WHITE);
@@ -300,6 +355,177 @@ public class Client extends Application {
             }
             catch(Exception ex){ ex.printStackTrace(); }
         }
+        else if(comboBox.getValue().equals("Movie(tags)")){
+            try{
+                String[] tempArray = query10(con, searchbox.getText(), 10, pagenumber);
+                for(int i = 0; i < tempArray.length; i++){
+                    tempText = new Text(tempArray[i]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 0, i);
+                }
+            }
+            catch(Exception ex) { ex.printStackTrace();}
+        }
+    }
+    //----------------------------------------------------
+    //clickHandle: handles the clicking of titles on searches
+    //----------------------------------------------------
+    private void clickHandle(MouseEvent e, String title){
+        clickedList.add(title);
+    }
+    //----------------------------------------------------
+    //pageHandle: handles changing page number
+    //----------------------------------------------------
+    private void pageHandle(ActionEvent e){
+        if(e.getSource() == decreaseButton && !pnum.getText().equals("1")){
+            pnum.setText("" + (Integer.parseInt(pnum.getText()) - 1));
+        }
+        else if(e.getSource() == increaseButton){
+            pnum.setText("" + (Integer.parseInt(pnum.getText()) + 1));
+        }
+
+    }
+    //----------------------------------------------------
+    //topMovieHandle: called when top movie button hit
+    //----------------------------------------------------
+    private void topMovieHandle(ActionEvent e){
+        displayBox.getChildren().clear();
+        clickedList.clear();
+        int pagenumber = Integer.parseInt(pnum.getText());
+        try {
+            String[][] tempArray = query1(con, Integer.parseInt(amountbox.getText()), pagenumber);//query test
+            for(int i = 0; i < tempArray.length; i++){
+                Text titleText = new Text(tempArray[i][0]);
+                titleText.setFill(Color.WHITE);
+                titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                displayBox.add(titleText, 0, i);
+
+                tempText = new Text(tempArray[i][1]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 1 , i);
+
+                tempText = new Text(tempArray[i][2]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 2 , i);
+
+                displayBox.add(new ImageView(new Image(tempArray[i][3])), 3 , i);
+                displayBox.add(new ImageView(new Image(tempArray[i][4])), 4 , i);
+            }
+        }
+        catch(Exception ex){ ex.printStackTrace(); }
+    }
+    //----------------------------------------------------
+    //topPersonHandle: executed when top actor/director button hit
+    //----------------------------------------------------
+    private void topPersonHandle(ActionEvent e){
+        displayBox.getChildren().clear();
+        clickedList.clear();
+        String[] tempArray;
+        int pagenumber = Integer.parseInt(pnum.getText());
+        try{
+            if(e.getSource() == topActorsButton)
+                tempArray = query8(con, Integer.parseInt(amountbox.getText()),10, pagenumber);
+            else
+                tempArray = query7(con, Integer.parseInt(amountbox.getText()),10, pagenumber);
+
+            for(int i = 0; i < tempArray.length; i++){
+                tempText = new Text(tempArray[i]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 0, i);
+            }
+        }
+        catch(Exception ex) { ex.printStackTrace();}
+    }
+    //----------------------------------------------------
+    //recommendHandle: called when either recommend button clicked
+    //----------------------------------------------------
+    private void recommendHandle(ActionEvent e){
+        if(clickedList.size() > 0) {
+            String[][] tempArray;
+            int pagenumber = Integer.parseInt(pnum.getText());
+            displayBox.getChildren().clear();
+            String list = "";
+            for (String item : clickedList) {
+                item = item.replace("'", "''");
+                list = list + "'" + item + "', ";
+            }
+            clickedList.clear();
+            list = list.substring(0, list.length() - 2);
+            System.out.println(list);
+            try {
+                if (e.getSource() == rbdButton)
+                    tempArray = queryRBD(con, list, 5, pagenumber);
+                else
+                    tempArray = queryRBG(con, list, 5, pagenumber);
+
+                for (int i = 0; i < tempArray.length; i++) {
+                    Text titleText = new Text(tempArray[i][0]);
+                    if (titleText.getText().isEmpty())
+                        break;
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {
+                        titleText.setFill(Color.DEEPSKYBLUE);
+                        clickHandle(f, titleText.getText());
+                    });
+                    displayBox.add(titleText, 0, i);
+
+                    tempText = new Text(tempArray[i][1]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 1, i);
+
+                    tempText = new Text(tempArray[i][2]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 2, i);
+
+                    displayBox.add(new ImageView(new Image(tempArray[i][3])), 3, i);
+                    displayBox.add(new ImageView(new Image(tempArray[i][4])), 4, i);
+                }
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+    //----------------------------------------------------
+    //query1
+    //----------------------------------------------------
+    private String[][] query1(Connection con, int topNum, int pgNum) throws SQLException {
+        displayBox.getChildren().clear();
+        String[][] temp = new String[topNum][5];
+        String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
+                "FROM movie m "+
+                "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
+                "ORDER BY m.rtAudienceRating DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = con.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = "" + rs.getInt("movieYear");
+                temp[i][2] = rs.getString("rtAudienceRating");
+
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
     }
     //----------------------------------------------------
     //query3: searches by genre
@@ -321,8 +547,15 @@ public class Client extends Application {
                 temp[i][0] = rs.getString("title");
                 temp[i][1] = "" + rs.getInt("movieYear");
                 temp[i][2] = rs.getString("rtAudienceRating");
-                temp[i][3] = rs.getString("rtPictureURL");
-                temp[i][4] = rs.getString("imdbPictureURL");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
                 i++;
             }
             rs.close();
@@ -353,8 +586,15 @@ public class Client extends Application {
                 temp[i][0] = rs.getString("title");
                 temp[i][1] = "" + rs.getInt("movieYear");
                 temp[i][2] = rs.getString("rtAudienceRating");
-                temp[i][3] = rs.getString("rtPictureURL");
-                temp[i][4] = rs.getString("imdbPictureURL");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
                 i++;
             }
             rs.close();
@@ -382,19 +622,19 @@ public class Client extends Application {
             ResultSet rs = ps.executeQuery();
             int i = 0;
             while (rs.next()) {
-                /*
-                System.out.print(rs.getString("title")+" | "+
-                        rs.getInt("movieYear")+" | "+
-                        rs.getString("rtAudienceRating")+" | "+
-                        rs.getString("rtPictureURL")+" | "+
-                        rs.getString("imdbPictureURL")+"\n");
-                */
 
                 temp[i][0] = rs.getString("title");
                 temp[i][1] = "" + rs.getInt("movieYear");
                 temp[i][2] = rs.getString("rtAudienceRating");
-                temp[i][3] = rs.getString("rtPictureURL");
-                temp[i][4] = rs.getString("imdbPictureURL");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
                 i++;
             }
             rs.close();
@@ -422,18 +662,198 @@ public class Client extends Application {
             ResultSet rs = ps.executeQuery();
             int i = 0;
             while (rs.next()) {
-                /*
-                System.out.print(rs.getString("title")+" | "+
-                        rs.getInt("movieYear")+" | "+
-                        rs.getString("rtAudienceRating")+" | "+
-                        rs.getString("rtPictureURL")+" | "+
-                        rs.getString("imdbPictureURL")+"\n");
-                */
                 temp[i][0] = rs.getString("title");
                 temp[i][1] = "" + rs.getInt("movieYear");
                 temp[i][2] = rs.getString("rtAudienceRating");
-                temp[i][3] = rs.getString("rtPictureURL");
-                temp[i][4] = rs.getString("imdbPictureURL");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+    }
+    //----------------------------------------------------
+    //query7: returns top directors
+    //----------------------------------------------------
+    private String[] query7 (Connection conn, int k, int topNum, int pgNum) throws SQLException {
+        String[] temp = new String[topNum];
+
+        String query = "SELECT md.directorName, AVG(rtAudienceRating)\n" +
+                "FROM MOVIE m, MOVIE_DIRECTORS md\n" +
+                "WHERE m.movieID=md.movieID\n" +
+                "GROUP BY md.directorName\n" +
+                "HAVING count(md.movieID) >=" + k + "\n" +
+                "ORDER BY AVG(rtAudienceRating) DESC\n" +
+                "LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum ) + ";";
+
+
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i] = rs.getString("directorName");
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+
+    }
+    //----------------------------------------------------
+    //query8: returns top actors
+    //----------------------------------------------------
+    private String[] query8 (Connection conn, int k, int topNum, int pgNum) throws SQLException {
+        String[] temp = new String[topNum];
+
+        String query = "SELECT a.actorName, AVG(rtAudienceRating)\n" +
+                "FROM MOVIE m, MOVIE_ACTORS a\n" +
+                "WHERE m.movieID=a.movieID\n" +
+                "GROUP BY a.actorName\n" +
+                "HAVING count(a.movieID) >=" + k + "\n" +
+                "ORDER BY AVG(rtAudienceRating) DESC\n" +
+                "LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum ) + ";";
+
+
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i] = rs.getString("actorName");
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+
+    }
+    //----------------------------------------------------
+    //query10: Searches by movie, show tags
+    //----------------------------------------------------
+    private String[] query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
+        String[] A = new String[topNum];
+        String query = "SELECT DISTINCT t.tagValue "+
+                "FROM movie m, movie_tags mt, tags t "+
+                "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
+                "ORDER BY mt.tagWeight DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            int i = 0;
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                A[i] = rs.getString("tagValue");
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return A;
+    }
+    //----------------------------------------------------
+    //queryRBD: recommend by directors of movies selected
+    //----------------------------------------------------
+    private String[][] queryRBD (Connection conn, String list, int topNum, int pgNum) throws SQLException {
+        String[][] temp = new String[topNum][5];
+        String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
+                "FROM movie m, movie_directors md "+
+                "WHERE m.movieID = md.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
+                "AND md.directorID IN (SELECT directorID " +
+                "FROM movie_directors mdd, movie mm " +
+                "WHERE mm.movieID = mdd.movieID and mm.title IN (" + list + ")) " +//should be like ('a', 'b', 'c') add parethesis and stuff
+                "ORDER BY m.rtAudienceRating DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = "" + rs.getInt("movieYear");
+                temp[i][2] = rs.getString("rtAudienceRating");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+    }
+    //----------------------------------------------------
+    //queryRBG: recommend by genre of movies selected
+    //----------------------------------------------------
+    private String[][] queryRBG (Connection conn, String list, int topNum, int pgNum) throws SQLException {
+        String[][] temp = new String[topNum][5];
+        String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
+                "FROM movie m, movie_genres mg "+
+                "WHERE m.movieID = mg.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
+                "AND mg.genre IN (SELECT mgg.genre " +
+                "FROM movie_genres mgg, movie mm " +
+                "WHERE mm.movieID = mgg.movieID and mm.title IN (" + list + ")) " +//should be like ('a', 'b', 'c') add parethesis and stuff
+                "ORDER BY m.rtAudienceRating DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = "" + rs.getInt("movieYear");
+                temp[i][2] = rs.getString("rtAudienceRating");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
                 i++;
             }
             rs.close();
