@@ -374,7 +374,7 @@ public class Client extends Application {
         clickedList.add(title);
     }
     //----------------------------------------------------
-    //pageHandle
+    //pageHandle: handles changing page number
     //----------------------------------------------------
     private void pageHandle(ActionEvent e){
         if(e.getSource() == decreaseButton && !pnum.getText().equals("1")){
@@ -437,45 +437,54 @@ public class Client extends Application {
         catch(Exception ex) { ex.printStackTrace();}
     }
     //----------------------------------------------------
+    //recommendHandle: called when either recommend button clicked
+    //----------------------------------------------------
     private void recommendHandle(ActionEvent e){
-        String[][] tempArray;
-        int pagenumber = Integer.parseInt(pnum.getText());
-        displayBox.getChildren().clear();
-        String list = "";
-        for(String item : clickedList){
-            item = item.replace("'", "''");
-            list = list + "'" + item + "', ";
-        }
-        clickedList.clear();
-        list = list.substring(0, list.length()-2);
-        System.out.println(list);
-        try {
-            if(e.getSource() == rbdButton)
-                tempArray = queryRBD(con, list, 5, pagenumber);
-            else
-                tempArray = queryRBG(con, list, 5, pagenumber);
+        if(clickedList.size() > 0) {
+            String[][] tempArray;
+            int pagenumber = Integer.parseInt(pnum.getText());
+            displayBox.getChildren().clear();
+            String list = "";
+            for (String item : clickedList) {
+                item = item.replace("'", "''");
+                list = list + "'" + item + "', ";
+            }
+            clickedList.clear();
+            list = list.substring(0, list.length() - 2);
+            System.out.println(list);
+            try {
+                if (e.getSource() == rbdButton)
+                    tempArray = queryRBD(con, list, 5, pagenumber);
+                else
+                    tempArray = queryRBG(con, list, 5, pagenumber);
 
-            for(int i = 0; i < tempArray.length; i++){
-                Text titleText = new Text(tempArray[i][0]);
-                if(titleText.getText().isEmpty())
-                    break;
-                titleText.setFill(Color.WHITE);
-                titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
-                displayBox.add(titleText, 0, i);
+                for (int i = 0; i < tempArray.length; i++) {
+                    Text titleText = new Text(tempArray[i][0]);
+                    if (titleText.getText().isEmpty())
+                        break;
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {
+                        titleText.setFill(Color.DEEPSKYBLUE);
+                        clickHandle(f, titleText.getText());
+                    });
+                    displayBox.add(titleText, 0, i);
 
-                tempText = new Text(tempArray[i][1]);
-                tempText.setFill(Color.WHITE);
-                displayBox.add(tempText, 1 , i);
+                    tempText = new Text(tempArray[i][1]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 1, i);
 
-                tempText = new Text(tempArray[i][2]);
-                tempText.setFill(Color.WHITE);
-                displayBox.add(tempText, 2 , i);
+                    tempText = new Text(tempArray[i][2]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 2, i);
 
-                displayBox.add(new ImageView(new Image(tempArray[i][3])), 3 , i);
-                displayBox.add(new ImageView(new Image(tempArray[i][4])), 4 , i);
+                    displayBox.add(new ImageView(new Image(tempArray[i][3])), 3, i);
+                    displayBox.add(new ImageView(new Image(tempArray[i][4])), 4, i);
+                }
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
-        catch(Exception ex){ ex.printStackTrace();}
     }
     //----------------------------------------------------
     //query1
@@ -772,7 +781,7 @@ public class Client extends Application {
         return A;
     }
     //----------------------------------------------------
-    //queryRBD: searches by director
+    //queryRBD: recommend by directors of movies selected
     //----------------------------------------------------
     private String[][] queryRBD (Connection conn, String list, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
@@ -814,7 +823,7 @@ public class Client extends Application {
         return temp;
     }
     //----------------------------------------------------
-    //queryRBD: searches by director
+    //queryRBG: recommend by genre of movies selected
     //----------------------------------------------------
     private String[][] queryRBG (Connection conn, String list, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
