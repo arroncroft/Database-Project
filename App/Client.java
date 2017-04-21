@@ -493,7 +493,7 @@ public class Client extends Application {
         displayBox.getChildren().clear();
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM movie m "+
+                "FROM MOVIE m "+
                 "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -533,7 +533,7 @@ public class Client extends Application {
     private String[][] query3 (Connection conn, String genre, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM movie m, movie_genres mg "+
+                "FROM MOVIE m, MOVIE_GENRES mg "+
                 "WHERE m.movieID = mg.movieID and mg.genre = '"+genre.toUpperCase()+"' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -572,7 +572,7 @@ public class Client extends Application {
     private String[][] query4 (Connection conn, String dName, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM movie m, movie_directors md "+
+                "FROM MOVIE m, MOVIE_DIRECTORS md "+
                 "WHERE m.movieID = md.movieID and md.directorName LIKE '%"+dName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -611,7 +611,7 @@ public class Client extends Application {
     private String[][] query5 (Connection conn, String aName, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM movie m, movie_actors ma "+
+                "FROM MOVIE m, MOVIE_ACTORS ma "+
                 "WHERE m.movieID = ma.movieID and ma.actorName LIKE '%"+aName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -651,7 +651,7 @@ public class Client extends Application {
     private String[][] query6 (Connection conn, String tagName, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM movie m, movie_tags mt, tags t "+
+                "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
                 "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND t.tagValue LIKE '%"+tagName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -758,7 +758,7 @@ public class Client extends Application {
     private String[] query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
         String[] A = new String[topNum];
         String query = "SELECT DISTINCT t.tagValue "+
-                "FROM movie m, movie_tags mt, tags t "+
+                "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
                 "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
                 "ORDER BY mt.tagWeight DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -786,7 +786,7 @@ public class Client extends Application {
     private String[][] queryRBD (Connection conn, String list, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM movie m, movie_directors md "+
+                "FROM MOVIE m, MOVIE_DIRECTORS md "+
                 "WHERE m.movieID = md.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "AND md.directorID IN (SELECT directorID " +
                 "FROM movie_directors mdd, movie mm " +
@@ -828,7 +828,7 @@ public class Client extends Application {
     private String[][] queryRBG (Connection conn, String list, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM movie m, movie_genres mg "+
+                "FROM MOVIE m, MOVIE_GENRES mg "+
                 "WHERE m.movieID = mg.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "AND mg.genre IN (SELECT mgg.genre " +
                 "FROM movie_genres mgg, movie mm " +

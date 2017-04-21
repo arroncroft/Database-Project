@@ -247,7 +247,6 @@ public class Queries {
 
    }
 
-   //WIP
    //TIME LINE ALL MOVIES USER HAS RATED and Breakdown by Genre
    private static void query9 (Connection conn, int uid, int topNum, int pgNum) throws SQLException
    {
