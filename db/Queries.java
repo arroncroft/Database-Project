@@ -53,11 +53,9 @@ public class Queries {
 	}
 
    private static void query2 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
-      String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL, t.tagValue "+
-                     "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
-                     "WHERE m.rtAudienceRating NOT LIKE '%N%' and m.movieID = mt.movieID and mt.tagID = t.tagID and m.title like '"+ title +"' "+
-                     "ORDER BY mt.tagWeight DESC "+
-
+      String query = "SELECT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL"+
+                     "FROM MOVIE m "+
+                     "WHERE m.title like '"+ title +"' "+
                      "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
       try {
          //create the prepared statement
@@ -70,7 +68,6 @@ public class Queries {
                              rs.getString("rtAudienceRating")+" | "+
                              rs.getString("rtPictureURL")+" | "+
                              rs.getString("imdbPictureURL")+
-                             rs.getString( "tagValue")+"\n");
 			}
          rs.close();
 			ps.close();
