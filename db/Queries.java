@@ -18,13 +18,12 @@ public class Queries {
 	private static ResultSet rs;
 
    public static void main(String[] args) throws Exception {
-         // opening database connection to MySQL server
-			con = DriverManager.getConnection(url, user, password);
-			System.out.println("Database connected successfully");
-         System.out.println("*******************************");
-
-         query9(con, 170, 10, 1);
-	}
+        // opening database connection to MySQL server
+        con = DriverManager.getConnection(url, user, password);
+        System.out.println("Database connected successfully");
+        System.out.println("*******************************");
+        query9(con,75, 10, 1);
+   }
 
    //search by top rated on RT
 	private static void query1 (Connection conn, int topNum, int pgNum) throws SQLException {
@@ -254,8 +253,8 @@ public class Queries {
 	   	String query1 = "SELECT m.title, urmt.rating, DATE_FORMAT(FROM_UNIXTIME(urmt.timestamp/1000), '%e %b %Y') AS 'date_formatted'\n" +
                         "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt\n" +
                         "WHERE urmt.userID = " + uid + " AND m.movieID = urmt.movieID\n" +
-                        "ORDER BY urmt.timestamp\n" +
-                        "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+                        "ORDER BY urmt.timestamp\n";
+//                        "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
 
         // Gets the the genres and percentages each genre appears in the user ratings for the specified user
 	   	String query2 ="SELECT mg.genre, 100 * count(mg.genre) / (SELECT count(m.title)\n" +
@@ -264,7 +263,8 @@ public class Queries {
                                                                  ") AS 'average'\n" +
                        "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt, MOVIE_GENRES mg\n" +
                        "WHERE urmt.userID =" + uid + " AND m.movieID = urmt.movieID AND m.movieID = mg.movieID\n" +
-                       "GROUP BY mg.genre;";
+                       "GROUP BY mg.genre\n" +
+                       "ORDER BY average DESC;";
 
 
        try {
@@ -294,7 +294,7 @@ public class Queries {
 
    //see all tags attached to movie title
    private static void query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
-      String query = "SELECT DISTINCT t.tagValue "+
+      String query = "SELECT t.tagValue "+
                      "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
                      "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
                      "ORDER BY mt.tagWeight DESC "+

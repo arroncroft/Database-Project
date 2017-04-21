@@ -494,7 +494,7 @@ public class Client extends Application {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
                 "FROM MOVIE m "+
-                "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
+//                "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
         try {
@@ -757,7 +757,7 @@ public class Client extends Application {
     //----------------------------------------------------
     private String[] query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
         String[] A = new String[topNum];
-        String query = "SELECT DISTINCT t.tagValue "+
+        String query = "SELECT t.tagValue "+
                 "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
                 "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
                 "ORDER BY mt.tagWeight DESC "+
@@ -789,7 +789,7 @@ public class Client extends Application {
                 "FROM MOVIE m, MOVIE_DIRECTORS md "+
                 "WHERE m.movieID = md.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "AND md.directorID IN (SELECT directorID " +
-                "FROM movie_directors mdd, movie mm " +
+                "FROM MOVIE_DIRECTORS mdd, MOVIE mm " +
                 "WHERE mm.movieID = mdd.movieID and mm.title IN (" + list + ")) " +//should be like ('a', 'b', 'c') add parethesis and stuff
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -831,7 +831,7 @@ public class Client extends Application {
                 "FROM MOVIE m, MOVIE_GENRES mg "+
                 "WHERE m.movieID = mg.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "AND mg.genre IN (SELECT mgg.genre " +
-                "FROM movie_genres mgg, movie mm " +
+                "FROM MOVIE_GENRES mgg, MOVIE mm " +
                 "WHERE mm.movieID = mgg.movieID and mm.title IN (" + list + ")) " +//should be like ('a', 'b', 'c') add parethesis and stuff
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
