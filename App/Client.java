@@ -5,31 +5,31 @@ import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.ScrollPane;
-
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
 import javafx.geometry.*;
 import java.sql.*;
+import java.util.ArrayList;
 import javafx.stage.Screen;
 
 
 
 public class Client extends Application {
 
-    // JavaFX class declarations
+    // Java declarations
     private int maxX;
     private int maxY;
+    private ArrayList<String> clickedList;
+
+    // JavaFX class declarations
     private final String bStyle = "-fx-background-color: #6ba3d3;"; //Style color for Buttons and such: bStyle
     private ScrollPane scrollpane;
     private GridPane displayBox;
@@ -40,6 +40,10 @@ public class Client extends Application {
     private Text tempText;
     private Button increaseButton;
     private Button decreaseButton;
+    private Button topDirectorsButton;
+    private Button topActorsButton;
+    private Button rbdButton;
+    private Button rbgButton;
 
     //	JDBC URL, username and password of MySQL server
     private static final String url = "jdbc:mysql://localhost:3306/DATABASE_GROUP_PROJECT?useSSL=false";
@@ -63,7 +67,7 @@ public class Client extends Application {
         catch(Exception ex){
             System.out.println("Unable to create connection");
         }
-
+        clickedList = new ArrayList<>();
         getScreenBounds();
         stage.setScene(mainScene());
         stage.setTitle("(VSU)ggester");
@@ -185,28 +189,31 @@ public class Client extends Application {
         topMovies.setPrefWidth(250);
         topMovies.setOnAction(e -> {topMovieHandle(e);});
 
-        Button topDirectors = new Button("Top Directors");
-        topDirectors.setStyle(bStyle);
-        topDirectors.setPrefWidth(250);
+        topDirectorsButton = new Button("Top Directors");
+        topDirectorsButton.setStyle(bStyle);
+        topDirectorsButton.setPrefWidth(250);
+        topDirectorsButton.setOnAction(e -> {topPersonHandle(e);});
 
-        Button topActors = new Button("Top Actors");
-        topActors.setStyle(bStyle);
-        topActors.setPrefWidth(250);
-        topActors.setOnAction(e -> {topActorHandle(e);});
+        topActorsButton = new Button("Top Actors");
+        topActorsButton.setStyle(bStyle);
+        topActorsButton.setPrefWidth(250);
+        topActorsButton.setOnAction(e -> {topPersonHandle(e);});
 
-        Button rmGenre = new Button("Recommend by Genre");
-        rmGenre.setStyle(bStyle);
-        rmGenre.setPrefWidth(250);
+        rbgButton = new Button("Recommend by Genre");
+        rbgButton.setStyle(bStyle);
+        rbgButton.setPrefWidth(250);
+        rbgButton.setOnAction(e -> {recommendHandle(e);});
 
-        Button rmDirector = new Button("Recommend by Director");
-        rmDirector.setStyle(bStyle);
-        rmDirector.setPrefWidth(250);
+        rbdButton = new Button("Recommend by Director");
+        rbdButton.setStyle(bStyle);
+        rbdButton.setPrefWidth(250);
+        rbdButton.setOnAction(e -> {recommendHandle(e);});
 
         amountbox = new TextField("5");
         amountbox.setMaxWidth(100);
 
         //===== Add children to panels =====
-        rightPanel.getChildren().addAll(topMovies, topDirectors, topActors, rmGenre, rmDirector, amountbox);
+        rightPanel.getChildren().addAll(topMovies, topDirectorsButton, topActorsButton, rbgButton, rbdButton, amountbox);
         hbox2.getChildren().addAll(scrollpane, rightPanel);
         pagebox.getChildren().addAll(decreaseButton, pnum, increaseButton);
         hbox1.getChildren().addAll(comboBox, searchbox, searchButton);
@@ -225,6 +232,7 @@ public class Client extends Application {
     //----------------------------------------------------
     private void searchHandle(ActionEvent e){
         displayBox.getChildren().clear();
+        clickedList.clear();
         int pagenumber = Integer.parseInt(pnum.getText());
 
         //--------------------
@@ -363,7 +371,7 @@ public class Client extends Application {
     //clickHandle: handles the clicking of titles on searches
     //----------------------------------------------------
     private void clickHandle(MouseEvent e, String title){
-        System.out.println(title);
+        clickedList.add(title);
     }
     //----------------------------------------------------
     //pageHandle
@@ -382,6 +390,7 @@ public class Client extends Application {
     //----------------------------------------------------
     private void topMovieHandle(ActionEvent e){
         displayBox.getChildren().clear();
+        clickedList.clear();
         int pagenumber = Integer.parseInt(pnum.getText());
         try {
             String[][] tempArray = query1(con, Integer.parseInt(amountbox.getText()), pagenumber);//query test
@@ -406,13 +415,19 @@ public class Client extends Application {
         catch(Exception ex){ ex.printStackTrace(); }
     }
     //----------------------------------------------------
-    //topActorHandle: executed when top actor button hit
+    //topPersonHandle: executed when top actor/director button hit
     //----------------------------------------------------
-    private void topActorHandle(ActionEvent e){
+    private void topPersonHandle(ActionEvent e){
         displayBox.getChildren().clear();
+        clickedList.clear();
+        String[] tempArray;
         int pagenumber = Integer.parseInt(pnum.getText());
         try{
-            String[] tempArray = query8(con, Integer.parseInt(amountbox.getText()),10, pagenumber);
+            if(e.getSource() == topActorsButton)
+                tempArray = query8(con, Integer.parseInt(amountbox.getText()),10, pagenumber);
+            else
+                tempArray = query7(con, Integer.parseInt(amountbox.getText()),10, pagenumber);
+
             for(int i = 0; i < tempArray.length; i++){
                 tempText = new Text(tempArray[i]);
                 tempText.setFill(Color.WHITE);
@@ -420,6 +435,47 @@ public class Client extends Application {
             }
         }
         catch(Exception ex) { ex.printStackTrace();}
+    }
+    //----------------------------------------------------
+    private void recommendHandle(ActionEvent e){
+        String[][] tempArray;
+        int pagenumber = Integer.parseInt(pnum.getText());
+        displayBox.getChildren().clear();
+        String list = "";
+        for(String item : clickedList){
+            item = item.replace("'", "''");
+            list = list + "'" + item + "', ";
+        }
+        clickedList.clear();
+        list = list.substring(0, list.length()-2);
+        System.out.println(list);
+        try {
+            if(e.getSource() == rbdButton)
+                tempArray = queryRBD(con, list, 5, pagenumber);
+            else
+                tempArray = queryRBG(con, list, 5, pagenumber);
+
+            for(int i = 0; i < tempArray.length; i++){
+                Text titleText = new Text(tempArray[i][0]);
+                if(titleText.getText().isEmpty())
+                    break;
+                titleText.setFill(Color.WHITE);
+                titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                displayBox.add(titleText, 0, i);
+
+                tempText = new Text(tempArray[i][1]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 1 , i);
+
+                tempText = new Text(tempArray[i][2]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 2 , i);
+
+                displayBox.add(new ImageView(new Image(tempArray[i][3])), 3 , i);
+                displayBox.add(new ImageView(new Image(tempArray[i][4])), 4 , i);
+            }
+        }
+        catch(Exception ex){ ex.printStackTrace();}
     }
     //----------------------------------------------------
     //query1
@@ -454,7 +510,6 @@ public class Client extends Application {
                     temp[i][4] = "noimage.png";
                 i++;
             }
-            System.out.println(temp[0][3]);
             rs.close();
             ps.close();
         }
@@ -621,16 +676,16 @@ public class Client extends Application {
         return temp;
     }
     //----------------------------------------------------
-    //query8: returns top actors
+    //query7: returns top directors
     //----------------------------------------------------
-    private String[] query8 (Connection conn, int k, int topNum, int pgNum) throws SQLException {
+    private String[] query7 (Connection conn, int k, int topNum, int pgNum) throws SQLException {
         String[] temp = new String[topNum];
 
-        String query = "SELECT a.actorName, AVG(rtAudienceRating)\n" +
-                "FROM MOVIE m, MOVIE_ACTORS a\n" +
-                "WHERE m.movieID=a.movieID\n" +
-                "GROUP BY a.actorName\n" +
-                "HAVING count(a.movieID) >" + k + "\n" +
+        String query = "SELECT md.directorName, AVG(rtAudienceRating)\n" +
+                "FROM MOVIE m, MOVIE_DIRECTORS md\n" +
+                "WHERE m.movieID=md.movieID\n" +
+                "GROUP BY md.directorName\n" +
+                "HAVING count(md.movieID) >=" + k + "\n" +
                 "ORDER BY AVG(rtAudienceRating) DESC\n" +
                 "LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum ) + ";";
 
@@ -642,7 +697,40 @@ public class Client extends Application {
             ResultSet rs = ps.executeQuery();
             int i = 0;
             while (rs.next()) {
-                System.out.println(rs.getString("actorName"));
+                temp[i] = rs.getString("directorName");
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+
+    }
+    //----------------------------------------------------
+    //query8: returns top actors
+    //----------------------------------------------------
+    private String[] query8 (Connection conn, int k, int topNum, int pgNum) throws SQLException {
+        String[] temp = new String[topNum];
+
+        String query = "SELECT a.actorName, AVG(rtAudienceRating)\n" +
+                "FROM MOVIE m, MOVIE_ACTORS a\n" +
+                "WHERE m.movieID=a.movieID\n" +
+                "GROUP BY a.actorName\n" +
+                "HAVING count(a.movieID) >=" + k + "\n" +
+                "ORDER BY AVG(rtAudienceRating) DESC\n" +
+                "LIMIT " + topNum + " OFFSET " + ((pgNum -1 ) * topNum ) + ";";
+
+
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
                 temp[i] = rs.getString("actorName");
                 i++;
             }
@@ -672,7 +760,6 @@ public class Client extends Application {
             int i = 0;
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                //System.out.println(rs.getString("tagValue"));
                 A[i] = rs.getString("tagValue");
                 i++;
             }
@@ -683,5 +770,89 @@ public class Client extends Application {
             se.printStackTrace();
         }
         return A;
+    }
+    //----------------------------------------------------
+    //queryRBD: searches by director
+    //----------------------------------------------------
+    private String[][] queryRBD (Connection conn, String list, int topNum, int pgNum) throws SQLException {
+        String[][] temp = new String[topNum][5];
+        String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
+                "FROM movie m, movie_directors md "+
+                "WHERE m.movieID = md.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
+                "AND md.directorID IN (SELECT directorID " +
+                "FROM movie_directors mdd, movie mm " +
+                "WHERE mm.movieID = mdd.movieID and mm.title IN (" + list + ")) " +//should be like ('a', 'b', 'c') add parethesis and stuff
+                "ORDER BY m.rtAudienceRating DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = "" + rs.getInt("movieYear");
+                temp[i][2] = rs.getString("rtAudienceRating");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+    }
+    //----------------------------------------------------
+    //queryRBD: searches by director
+    //----------------------------------------------------
+    private String[][] queryRBG (Connection conn, String list, int topNum, int pgNum) throws SQLException {
+        String[][] temp = new String[topNum][5];
+        String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
+                "FROM movie m, movie_genres mg "+
+                "WHERE m.movieID = mg.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
+                "AND mg.genre IN (SELECT mgg.genre " +
+                "FROM movie_genres mgg, movie mm " +
+                "WHERE mm.movieID = mgg.movieID and mm.title IN (" + list + ")) " +//should be like ('a', 'b', 'c') add parethesis and stuff
+                "ORDER BY m.rtAudienceRating DESC "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = "" + rs.getInt("movieYear");
+                temp[i][2] = rs.getString("rtAudienceRating");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
     }
 }
