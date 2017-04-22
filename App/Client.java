@@ -272,6 +272,10 @@ public class Client extends Application {
 
                     displayBox.add(new ImageView(new Image(tempArray[i][3])), 3 , i);
                     displayBox.add(new ImageView(new Image(tempArray[i][4])), 4 , i);
+
+                    tempText = new Text(tempArray[i][5]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 5 , i);
                 }
             }
             catch(Exception ex){ ex.printStackTrace(); }
@@ -586,11 +590,12 @@ public class Client extends Application {
     //-------------------------------------
 
     private String[][] query2 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
-        String[][] temp = new String[topNum][5];
+        String[][] temp = new String[topNum][6];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
                 "FROM MOVIE m "+
                 "WHERE m.title like '%"+ title +"%' "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+
         try {
             //create the prepared statement
             PreparedStatement ps = conn.prepareStatement(query);
@@ -610,8 +615,28 @@ public class Client extends Application {
                     temp[i][4] = rs.getString("imdbPictureURL");
                 else
                     temp[i][4] = "noimage.png";
+                System.out.println(temp[i][0]);
+                String tagHolder = "";
+                String query2 = "SELECT t.tagValue "+
+                        "FROM movie m, movie_tags mt, tags t "+
+                        "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+temp[i][0]+"' "+
+                        "ORDER BY mt.tagWeight DESC "+
+                        "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+
+                PreparedStatement ps2 = conn.prepareStatement(query2);
+                ResultSet rs2 = ps2.executeQuery();
+                int j = 1;
+                while(rs2.next()){
+                    if(j%5 == 0)
+                        tagHolder = tagHolder + "[" +  rs2.getString("tagValue") + "]\n";
+                    else
+                        tagHolder = tagHolder + "[" + rs2.getString("tagValue") + "] ";
+                    j++;
+                }
+                temp[i][5] = tagHolder;
                 i++;
             }
+
             rs.close();
             ps.close();
         }
@@ -903,6 +928,8 @@ public class Client extends Application {
             stage2.show();
             rs.close();
             ps.close();
+            rs2.close();
+            ps2.close();
         }
         catch (SQLException se) {
             se.printStackTrace();
