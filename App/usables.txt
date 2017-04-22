@@ -1,0 +1,27 @@
+===== searchbars =====
+Movie search: Lord of the rings, star wars, etc. 
+
+Genre: horror, action, etc.
+
+Director search: steven spielberg, tim burton, peter jackson, etc.
+
+Actors search: will smith, tom cruise, etc.
+
+tag search: animation, pixar, etc.
+
+Movie(tags) search: toy story, finding nemo (no substring pattern matching here so only full names)
+
+===== top buttons =====
+
+Top Movie, Top Actors, Top Directors: default number of 5 is good.
+
+===== recommends (don't choose swedish/latin)=====
+
+Recommend by Genre: doesn't matter, the more you pick, the more likely to return same as top movies.
+
+Recommend by Director: search tom cruise actor, select rain main, last samurai. But it doesn't matter
+
+===== user timeline =====
+
+Use timeline: 75, 788
+
