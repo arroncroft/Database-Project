@@ -13,6 +13,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
 import javafx.geometry.*;
@@ -30,6 +34,7 @@ public class Client extends Application {
     private ArrayList<String> clickedList;
 
     // JavaFX class declarations
+    private Stage stage2;
     private final String bStyle = "-fx-background-color: #6ba3d3;"; //Style color for Buttons and such: bStyle
     private ScrollPane scrollpane;
     private GridPane displayBox;
@@ -42,6 +47,7 @@ public class Client extends Application {
     private Button decreaseButton;
     private Button topDirectorsButton;
     private Button topActorsButton;
+    private Button timelineButton;
     private Button rbdButton;
     private Button rbgButton;
 
@@ -69,6 +75,8 @@ public class Client extends Application {
         }
         clickedList = new ArrayList<>();
         getScreenBounds();
+        stage2 = new Stage();
+
         stage.setScene(mainScene());
         stage.setTitle("(VSU)ggester");
         stage.setMaximized(true);
@@ -209,11 +217,17 @@ public class Client extends Application {
         rbdButton.setPrefWidth(250);
         rbdButton.setOnAction(e -> {recommendHandle(e);});
 
+        timelineButton = new Button("User Timeline");
+        timelineButton.setStyle(bStyle);
+        timelineButton.setPrefWidth(250);
+        timelineButton.setOnAction(e -> {timelineHandle(e);});
+
+
         amountbox = new TextField("5");
         amountbox.setMaxWidth(100);
 
         //===== Add children to panels =====
-        rightPanel.getChildren().addAll(topMovies, topDirectorsButton, topActorsButton, rbgButton, rbdButton, amountbox);
+        rightPanel.getChildren().addAll(topMovies, topDirectorsButton, topActorsButton, rbgButton, rbdButton, timelineButton, amountbox);
         hbox2.getChildren().addAll(scrollpane, rightPanel);
         pagebox.getChildren().addAll(decreaseButton, pnum, increaseButton);
         hbox1.getChildren().addAll(comboBox, searchbox, searchButton);
@@ -232,16 +246,35 @@ public class Client extends Application {
     //----------------------------------------------------
     private void searchHandle(ActionEvent e){
         displayBox.getChildren().clear();
-        clickedList.clear();
         int pagenumber = Integer.parseInt(pnum.getText());
 
         //--------------------
         //search by movie
         //--------------------
         if(comboBox.getValue().equals("Movie")) {
-            for (int i = 0; i < 100; i++) {
-                displayBox.add(new Text("displaying results for movie: " + searchbox.getText()), 0, i);
+            try {
+                String[][] tempArray = query2(con, searchbox.getText(), 10, pagenumber);//query test
+                for(int i = 0; i < tempArray.length; i++){
+                    Text titleText = new Text(tempArray[i][0]);
+                    if(titleText.getText().isEmpty())
+                        break;
+                    titleText.setFill(Color.WHITE);
+                    titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                    displayBox.add(titleText, 0, i);
+
+                    tempText = new Text(tempArray[i][1]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 1 , i);
+
+                    tempText = new Text(tempArray[i][2]);
+                    tempText.setFill(Color.WHITE);
+                    displayBox.add(tempText, 2 , i);
+
+                    displayBox.add(new ImageView(new Image(tempArray[i][3])), 3 , i);
+                    displayBox.add(new ImageView(new Image(tempArray[i][4])), 4 , i);
+                }
             }
+            catch(Exception ex){ ex.printStackTrace(); }
         }
         //--------------------
         //search by director
@@ -390,7 +423,6 @@ public class Client extends Application {
     //----------------------------------------------------
     private void topMovieHandle(ActionEvent e){
         displayBox.getChildren().clear();
-        clickedList.clear();
         int pagenumber = Integer.parseInt(pnum.getText());
         try {
             String[][] tempArray = query1(con, Integer.parseInt(amountbox.getText()), pagenumber);//query test
@@ -419,7 +451,6 @@ public class Client extends Application {
     //----------------------------------------------------
     private void topPersonHandle(ActionEvent e){
         displayBox.getChildren().clear();
-        clickedList.clear();
         String[] tempArray;
         int pagenumber = Integer.parseInt(pnum.getText());
         try{
@@ -487,13 +518,38 @@ public class Client extends Application {
         }
     }
     //----------------------------------------------------
+    //timelineHandle: called when user timeline button hit
+    //----------------------------------------------------
+    private void timelineHandle(ActionEvent e){
+        displayBox.getChildren().clear();
+        int pagenumber = Integer.parseInt(pnum.getText());
+        try {
+            String[][] tempArray = query9(con, Integer.parseInt(amountbox.getText()),10, pagenumber);
+            for(int i = 0; i < tempArray.length; i++){
+                Text titleText = new Text(tempArray[i][0]);
+                titleText.setFill(Color.WHITE);
+                titleText.setOnMousePressed(f -> {titleText.setFill(Color.DEEPSKYBLUE); clickHandle(f, titleText.getText()); });
+                displayBox.add(titleText, 0, i);
+
+                tempText = new Text(tempArray[i][1]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 1 , i);
+
+                tempText = new Text(tempArray[i][2]);
+                tempText.setFill(Color.WHITE);
+                displayBox.add(tempText, 2 , i);
+            }
+        }
+        catch(Exception ex){ ex.printStackTrace(); }
+    }
+    //----------------------------------------------------
     //query1
     //----------------------------------------------------
     private String[][] query1(Connection con, int topNum, int pgNum) throws SQLException {
         displayBox.getChildren().clear();
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM MOVIE m "+
+                "FROM movie m "+
                 "WHERE m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -527,13 +583,50 @@ public class Client extends Application {
         }
         return temp;
     }
+    //-------------------------------------
+
+    private String[][] query2 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
+        String[][] temp = new String[topNum][5];
+        String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
+                "FROM MOVIE m "+
+                "WHERE m.title like '%"+ title +"%' "+
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query);
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = "" + rs.getInt("movieYear");
+                temp[i][2] = rs.getString("rtAudienceRating");
+                if(!rs.getString("rtPictureURL").isEmpty())
+                    temp[i][3] = rs.getString("rtPictureURL");
+                else {
+                    temp[i][3] = "noimage.png";
+                }
+                if(!rs.getString("imdbPictureURL").isEmpty())
+                    temp[i][4] = rs.getString("imdbPictureURL");
+                else
+                    temp[i][4] = "noimage.png";
+                i++;
+            }
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+    }
     //----------------------------------------------------
     //query3: searches by genre
     //----------------------------------------------------
     private String[][] query3 (Connection conn, String genre, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM MOVIE m, MOVIE_GENRES mg "+
+                "FROM movie m, movie_genres mg "+
                 "WHERE m.movieID = mg.movieID and mg.genre = '"+genre.toUpperCase()+"' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -572,7 +665,7 @@ public class Client extends Application {
     private String[][] query4 (Connection conn, String dName, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM MOVIE m, MOVIE_DIRECTORS md "+
+                "FROM movie m, movie_directors md "+
                 "WHERE m.movieID = md.movieID and md.directorName LIKE '%"+dName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -611,7 +704,7 @@ public class Client extends Application {
     private String[][] query5 (Connection conn, String aName, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM MOVIE m, MOVIE_ACTORS ma "+
+                "FROM movie m, movie_actors ma "+
                 "WHERE m.movieID = ma.movieID and ma.actorName LIKE '%"+aName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -651,7 +744,7 @@ public class Client extends Application {
     private String[][] query6 (Connection conn, String tagName, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
+                "FROM movie m, movie_tags mt, tags t "+
                 "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND t.tagValue LIKE '%"+tagName.toUpperCase()+"%' AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "ORDER BY m.rtAudienceRating DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -752,13 +845,79 @@ public class Client extends Application {
         return temp;
 
     }
+    //TIME LINE ALL MOVIES USER HAS RATED and Breakdown by Genre
+    private String[][] query9 (Connection conn, int uid, int topNum, int pgNum) throws SQLException {
+        String[][] temp = new String[topNum][3];
+        // Gets the movie titles/ratings/dates for the given user id
+        String query1 = "SELECT m.title, urmt.rating, DATE_FORMAT(FROM_UNIXTIME(urmt.timestamp/1000), '%e %b %Y') AS 'date_formatted'\n" +
+                "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt\n" +
+                "WHERE urmt.userID = " + uid + " AND m.movieID = urmt.movieID\n" +
+                "ORDER BY urmt.timestamp\n" +
+                "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
+
+        // Gets the the genres and percentages each genre appears in the user ratings for the specified user
+        String query2 ="SELECT mg.genre, 100 * count(mg.genre) / (SELECT count(m.title)\n" +
+                "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt\n" +
+                "WHERE urmt.userID =" + uid + " AND m.movieID = urmt.movieID\n" +
+                ") AS 'average'\n" +
+                "FROM MOVIE m, USER_RATED_MOVIES_TIMESTAMP urmt, MOVIE_GENRES mg\n" +
+                "WHERE urmt.userID =" + uid + " AND m.movieID = urmt.movieID AND m.movieID = mg.movieID\n" +
+                "GROUP BY mg.genre\n" +
+                "ORDER BY average DESC;";
+
+
+        try {
+            //create the prepared statement
+            PreparedStatement ps = conn.prepareStatement(query1);
+            PreparedStatement ps2 = conn.prepareStatement((query2));
+
+            //process the results
+            ResultSet rs = ps.executeQuery();
+            int i = 0;
+            while (rs.next()) {
+                System.out.println(rs.getString("title"));
+                temp[i][0] = rs.getString("title");
+                temp[i][1] = rs.getString("rating");
+                temp[i][2] = rs.getString("date_formatted");
+                i++;
+            }
+
+            final NumberAxis xAxis = new NumberAxis();
+            final CategoryAxis yAxis = new CategoryAxis();
+            final BarChart<Number,String> bc = new BarChart<>(xAxis,yAxis);
+            bc.setPrefSize(500,500);
+            XYChart.Series dataSeries1 = new XYChart.Series();
+            dataSeries1.setName("Percentage");
+
+
+            ResultSet rs2 = ps2.executeQuery();
+            while (rs2.next()) {
+                System.out.printf("%s | %s%%\n", rs2.getString("genre"),rs2.getString("average"));
+                double average = Double.parseDouble((rs2.getString("average")));
+                String genre = rs2.getString("genre");
+                dataSeries1.getData().add(new XYChart.Data(average  , genre));
+
+            }
+            bc.getData().add(dataSeries1);
+            stage2.setScene(new Scene(new HBox(4, bc)));
+            stage2.show();
+            rs.close();
+            ps.close();
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+        }
+        return temp;
+
+
+    }
     //----------------------------------------------------
     //query10: Searches by movie, show tags
     //----------------------------------------------------
     private String[] query10 (Connection conn, String title, int topNum, int pgNum) throws SQLException {
         String[] A = new String[topNum];
-        String query = "SELECT DISTINCT t.tagValue "+
-                "FROM MOVIE m, MOVIE_TAGS mt, TAGS t "+
+        String query = "SELECT t.tagValue "+
+                "FROM movie m, movie_tags mt, tags t "+
                 "WHERE m.movieID = mt.movieID AND mt.tagID = t.tagID AND m.title = '"+title+"' "+
                 "ORDER BY mt.tagWeight DESC "+
                 "LIMIT "+topNum+" OFFSET "+((pgNum-1)*topNum);
@@ -786,7 +945,7 @@ public class Client extends Application {
     private String[][] queryRBD (Connection conn, String list, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM MOVIE m, MOVIE_DIRECTORS md "+
+                "FROM movie m, movie_directors md "+
                 "WHERE m.movieID = md.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "AND md.directorID IN (SELECT directorID " +
                 "FROM movie_directors mdd, movie mm " +
@@ -828,7 +987,7 @@ public class Client extends Application {
     private String[][] queryRBG (Connection conn, String list, int topNum, int pgNum) throws SQLException {
         String[][] temp = new String[topNum][5];
         String query = "SELECT DISTINCT m.title, m.movieYear, m.rtAudienceRating, m.rtPictureURL, m.imdbPictureURL "+
-                "FROM MOVIE m, MOVIE_GENRES mg "+
+                "FROM movie m, movie_genres mg "+
                 "WHERE m.movieID = mg.movieID AND m.rtAudienceRating NOT LIKE '%N%' "+
                 "AND mg.genre IN (SELECT mgg.genre " +
                 "FROM movie_genres mgg, movie mm " +
